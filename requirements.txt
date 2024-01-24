@@ -5,9 +5,11 @@ ffmpeg-python==0.2.0
 ffpyplayer==4.5.1
 future==0.18.3
 idna==3.6
-Kivy==2.3.0
+Kivy~=2.2.1
 Kivy-Garden==0.1.5
 Pygments==2.17.2
 pytube==15.0.0
 requests==2.31.0
 urllib3==2.1.0
+
+kivymd~=1.1.1
