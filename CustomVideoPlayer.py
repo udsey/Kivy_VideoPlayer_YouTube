@@ -1,5 +1,9 @@
-from kivy.metrics import sp
-from kivy.properties import ObjectProperty, Clock
+#https://www.youtube.com/watch?v=v8e-ukTAg5o&t=1916s
+
+from kivy.animation import Animation
+from kivy.core.window import Window
+from kivy.metrics import sp, dp
+from kivy.properties import ObjectProperty, Clock, BooleanProperty
 from kivy.uix.videoplayer import VideoPlayer
 from kivy.lang.builder import Builder
 from kivy.uix.screenmanager import Screen
@@ -13,17 +17,70 @@ from kivymd.uix.progressbar import MDProgressBar
 Builder.load_file('CustomVideoPlayer.kv')
 
 class CustomVideoPlayer(VideoPlayer):
+
+    full_screen = BooleanProperty(False)
     title = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        Window.bind(mouse_pos=self.mouse_pos_handler)
         Clock.schedule_once(self.add_file_name_label)
+
+    def mouse_pos_handler(self, window_sdl, mouse_pos):
+        expr = False
+
+        if self.state == 'play' and mouse_pos[1] / 2  > self.height / 2 and not self.full_screen:
+            expr = True
+        if self.state == 'play' and self.full_screen:
+            expr = True
+
+        if expr:
+            Clock.unschedule(self.hide_button_box)
+            Clock.schedule_once(self.hide_button_box, 5)
+            self.show_button_box()
+
+
+    def hide_button_box(self, *args):
+
+        def remove_button_box(*args):
+            self.ids.button_box_height = 0
+
+        button_box = self.ids.button_box
+
+        for instance in [button_box.ids.btn_stop,
+                         button_box.ids.btn_play_pause,
+                         button_box.ids.btn_full_screen,
+                         button_box.ids.volume_container,
+                         button_box.ids.btn_volume,
+                         button_box.ids.time,
+                         self.title]:
+            Animation(opacity=0, d=0.2).start(instance)
+        anim = Animation(opacity=0, d=0.2)
+        anim.bind(on_complete=remove_button_box)
+        anim.start(button_box.ids.progress_container)
+
+    def show_button_box(self, *args):
+
+        def add_button_box(*args):
+            self.ids.button_box_height = dp(56)
+
+        button_box = self.ids.button_box
+
+        for instance in [button_box.ids.btn_stop,
+                         button_box.ids.btn_play_pause,
+                         button_box.ids.btn_full_screen,
+                         button_box.ids.volume_container,
+                         self.title]:
+            Animation(opacity=1, d=0.2).start(instance)
+        anim = Animation(opacity=1, d=0.2)
+        anim.bind(on_complete=add_button_box)
+        anim.start(button_box.ids.progress_container)
 
     def set_time(self):
         seek = self.position / self.duration
         d = self.duration * seek
         minutes = int(d / 60)
-        seconds = int(d - minutes)
+        seconds = int(d - minutes * 60)
         self.ids.button_box.ids.time.text = "%d:%02d" % (minutes, seconds)
 
     def add_file_name_label(self, *args):
@@ -39,6 +96,23 @@ class CustomVideoPlayer(VideoPlayer):
                 )
         self.ids.container.add_widget(self.title)
 
+    def _play_started(self, instance, value):
+        super()._play_started(instance, value)
+        self.add_file_name_label()
+
+    def on_state(self, instance, value):
+        super().on_state(instance, value)
+        if value == 'play':
+            Clock.schedule_once(self.hide_button_box, 5)
+        else:
+            Clock.unschedule(self.hide_button_box)
+
+    def on_full_screen(self, instance, value):
+        def on_full_screen(*args):
+            self.full_screen = value
+            Animation(size_hint=(1, 1 if value else 0.5), d=0.2).start(self)
+
+        Clock.schedule_once(on_full_screen, 0.4)
 
 
 class PlayerContainer(MDFloatLayout):
@@ -50,6 +124,16 @@ class PlayerContainer(MDFloatLayout):
 class ProgressBarVideo(MDProgressBar):
     video = ObjectProperty()
 
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            return
+        self._update_seek(touch.x)
+
+    def _update_seek(self, x):
+        if not self.width == 0:
+            return
+        x = max(self.x, min(self.right, x)) - self.x
+        self.video.seek(x / float(self.width))
 
 
 #____________________Control Buttons___________________________________
@@ -78,9 +162,15 @@ class ButtonVideoVolume(BasePlayerButton):
     pass
 
 class ButtonVideoFullScreen(BasePlayerButton):
-    pass
+    def on_release(self, *args):
+        if not self.video.full_screen:
+            self.video.full_screen = True
+        else:
+            self.video.full_screen = False
+        return True
 
 #______________________________________________________________________________________
+
 
 class MainScreen(Screen):
     pass

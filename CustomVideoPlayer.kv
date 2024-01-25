@@ -24,9 +24,10 @@
         id: progress_container
 
         ProgressBarVideo:
+            video: root.parent
             background_color: 0, 1, 1, 0
             size_hint_y: None
-            height: '2dp'
+            height: '5dp'
             pos_hint: {'center_y': .5}
             value: root.parent.position if root.parent else 0
             max: max(root.parent.duration, root.parent.position, 1)
@@ -60,7 +61,7 @@
             on_value: root.parent.volume = self.value / 100
 
     ButtonVideoFullScreen:
-        id: btn_fullscreen
+        id: btn_full_screen
         video: root.parent
         icon: 'fullscreen'
 
