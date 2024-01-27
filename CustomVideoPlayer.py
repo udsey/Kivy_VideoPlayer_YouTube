@@ -18,7 +18,7 @@ Builder.load_file('CustomVideoPlayer.kv')
 
 class CustomVideoPlayer(VideoPlayer):
 
-    full_screen = BooleanProperty(False)
+    full_screen = BooleanProperty(True)
     title = None
 
     def __init__(self, **kwargs):
@@ -35,7 +35,7 @@ class CustomVideoPlayer(VideoPlayer):
             expr = True
 
         if expr:
-            Clock.unschedule(self.hide_button_box)
+
             Clock.schedule_once(self.hide_button_box, 5)
             self.show_button_box()
 
@@ -43,7 +43,7 @@ class CustomVideoPlayer(VideoPlayer):
     def hide_button_box(self, *args):
 
         def remove_button_box(*args):
-            self.ids.button_box_height = 0
+            self.ids.button_box.height = 0
 
         button_box = self.ids.button_box
 
@@ -53,8 +53,10 @@ class CustomVideoPlayer(VideoPlayer):
                          button_box.ids.volume_container,
                          button_box.ids.btn_volume,
                          button_box.ids.time,
+                         button_box.ids.progress_container,
                          self.title]:
             Animation(opacity=0, d=0.2).start(instance)
+
         anim = Animation(opacity=0, d=0.2)
         anim.bind(on_complete=remove_button_box)
         anim.start(button_box.ids.progress_container)
@@ -62,7 +64,7 @@ class CustomVideoPlayer(VideoPlayer):
     def show_button_box(self, *args):
 
         def add_button_box(*args):
-            self.ids.button_box_height = dp(56)
+            self.ids.button_box.height = dp(56)
 
         button_box = self.ids.button_box
 
