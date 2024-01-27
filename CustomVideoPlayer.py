@@ -17,8 +17,7 @@ from kivymd.uix.progressbar import MDProgressBar
 Builder.load_file('CustomVideoPlayer.kv')
 
 class CustomVideoPlayer(VideoPlayer):
-
-    full_screen = BooleanProperty(True)
+    full_screen = BooleanProperty(False)
     title = None
 
     def __init__(self, **kwargs):
@@ -26,18 +25,20 @@ class CustomVideoPlayer(VideoPlayer):
         Window.bind(mouse_pos=self.mouse_pos_handler)
         Clock.schedule_once(self.add_file_name_label)
 
+
     def mouse_pos_handler(self, window_sdl, mouse_pos):
         expr = False
 
-        if self.state == 'play' and mouse_pos[1] / 2  > self.height / 2 and not self.full_screen:
+        if self.state == 'play' and not self.full_screen:
             expr = True
         if self.state == 'play' and self.full_screen:
             expr = True
 
         if expr:
-
-            Clock.schedule_once(self.hide_button_box, 5)
+            Clock.unschedule(self.hide_button_box())
+            Clock.schedule_once(self.hide_button_box, 20)
             self.show_button_box()
+
 
 
     def hide_button_box(self, *args):
@@ -72,6 +73,9 @@ class CustomVideoPlayer(VideoPlayer):
                          button_box.ids.btn_play_pause,
                          button_box.ids.btn_full_screen,
                          button_box.ids.volume_container,
+                         button_box.ids.btn_volume,
+                         button_box.ids.time,
+                         button_box.ids.progress_container,
                          self.title]:
             Animation(opacity=1, d=0.2).start(instance)
         anim = Animation(opacity=1, d=0.2)
@@ -105,14 +109,14 @@ class CustomVideoPlayer(VideoPlayer):
     def on_state(self, instance, value):
         super().on_state(instance, value)
         if value == 'play':
-            Clock.schedule_once(self.hide_button_box, 5)
+            Clock.schedule_once(self.hide_button_box, 10)
         else:
             Clock.unschedule(self.hide_button_box)
 
     def on_full_screen(self, instance, value):
         def on_full_screen(*args):
             self.full_screen = value
-            Animation(size_hint=(1, 1 if value else 0.5), d=0.2).start(self)
+            Animation(size_hint=(1, 1 if value else 0.3), d=0.2).start(self)
 
         Clock.schedule_once(on_full_screen, 0.4)
 
@@ -127,17 +131,25 @@ class ProgressBarVideo(MDProgressBar):
     video = ObjectProperty()
 
     def on_touch_down(self, touch):
+        print('down')
         if not self.collide_point(*touch.pos):
             return
+        touch.grab(self)
         self._update_seek(touch.x)
+        return True
 
     def _update_seek(self, x):
-        if not self.width == 0:
+        if  self.width == 0:
             return
         x = max(self.x, min(self.right, x)) - self.x
         self.video.seek(x / float(self.width))
 
-
+    def on_touch_move(self, touch):
+        print('move')
+        if touch.grab_current is not self:
+            return
+        self._update_seek(touch.x)
+        return True
 #____________________Control Buttons___________________________________
 class PlayerButtonBox(MDGridLayout):
     video = ObjectProperty()
