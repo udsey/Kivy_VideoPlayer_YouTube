@@ -24,7 +24,7 @@ class CustomVideoPlayer(VideoPlayer):
         super().__init__(**kwargs)
         Window.bind(mouse_pos=self.mouse_pos_handler)
         Clock.schedule_once(self.add_file_name_label)
-
+        Animation(size_hint=(1, 0.5), d=0.2).start(self)
 
     def mouse_pos_handler(self, window_sdl, mouse_pos):
         expr = False
@@ -116,7 +116,7 @@ class CustomVideoPlayer(VideoPlayer):
     def on_full_screen(self, instance, value):
         def on_full_screen(*args):
             self.full_screen = value
-            Animation(size_hint=(1, 1 if value else 0.3), d=0.2).start(self)
+            Animation(size_hint=(1, 1 if value else 0.5), d=0.2).start(self)
 
         Clock.schedule_once(on_full_screen, 0.4)
 
